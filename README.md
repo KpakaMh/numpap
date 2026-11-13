@@ -5,7 +5,7 @@
 
 ---
 
-## 1. Philosophie Scientifique et Stratégie de Validation
+## 1. Logique Scientifique et Stratégie de Validation
 
 Plutôt que d'appliquer une structure générique uniforme à de multiples localisations tumorales, l'architecture de **Numpap** adopte une démarche incrémentale rigoureuse :
 
