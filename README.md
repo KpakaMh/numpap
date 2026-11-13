@@ -1,79 +1,156 @@
-# 🧬 QSP Oncology Digital Twin — Plateforme de Pharmacologie Quantitative & Médecine Computationnelle
+# Numpap — Prototype Exploratoire de Modélisation QSP & PK/PD en Oncologie Translationnelle
 
-![Python](https://img.shields.io/badge/Python-3.11+-3776AB?style=for-the-badge&logo=python&logoColor=white)
-![Dash](https://img.shields.io/badge/Dash_%26_Plotly-Interactive_UI-008DE4?style=for-the-badge&logo=plotly&logoColor=white)
-![SciPy](https://img.shields.io/badge/SciPy_%26_NumPy-ODE_Solvers-8CAAE6?style=for-the-badge&logo=scipy&logoColor=white)
-![Scikit-Learn](https://img.shields.io/badge/Scikit--Learn-Biomarker_ML-F7931E?style=for-the-badge&logo=scikitlearn&logoColor=white)
-![Docker](https://img.shields.io/badge/Docker-Reproducible-2496ED?style=for-the-badge&logo=docker&logoColor=white)
-
-**QSP Oncology Digital Twin** (`Numpap`) est une plateforme interactive de **Pharmacologie Quantitative des Systèmes (QSP)** et de simulation d'essais cliniques *in silico*. Elle couple un système mécaniste d'**équations différentielles ordinaires (EDO)** à un pipeline de **Machine Learning** pour modéliser la progression tumorale, l'émergence de résistances clonales, l'effet de trithérapies et l'identification de biomarqueurs prédictifs sur les **11 localisations cancéreuses majeures (données GLOBOCAN 2024 / CIRC-IARC)**.
+> **Statut du projet & Contexte d'Utilisation (*Context of Use* — Cadre FDA MIDD) :**  
+> **Numpap** est un **prototype exploratoire de pharmacologie quantitive des systèmes (QSP) et de modélisation PK/PD mécaniste**. Il est conçu pour l'exploration d'hypothèses biologiques, l'analyse des relations exposition-réponse, la vérification numérique des bilans de masse et l'analyse de sensibilité globale. **Il ne constitue pas un jumeau numérique clinique validé** et ne doit pas être utilisé à des fins de décision médicale ou de pronostic individuel.
 
 ---
 
-## 🎯 Objectifs Scientifiques & Fonctionnalités Clés
+## 1. Philosophie Scientifique et Stratégie de Validation
 
-### 1. Jumeau Numérique Patient ($N = 1$) & Microenvironnement Dynamique
-* **Catalogue Oncologique Multi-Cancers (GLOBOCAN 2024) :** 13 sous-types moléculaires couvrant les 11 cancers les plus fréquents au monde, paramétrés selon leur cinétique de croissance ($\lambda_0, \lambda_1$), leur perméabilité stromale ($\eta_{\text{stroma}}$), leurs mutations pilotes (`EGFR`, `HER2`, `KRAS`, `TP53`, `BRAF`, `HPV E6/E7`...) et leur tropisme métastatique.
-* **Modélisation des 7 Stades de Progression Tumorale :** Suivi en temps réel depuis l'*Initiation tumorale* (Stade 1) jusqu'à l'*Invasion locale EMT/MMP* (Stade 4), l'*Intravasation* (Stade 5) et la *Dissémination métastatique* (Stade 7).
-* **Combinaisons Thérapeutiques (Trithérapie *In Silico*) :**
-  * **Thérapie ciblée / Chimiothérapie :** Bolus IV et perfusion continue, modulés par la barrière stromale desmoplastique et l'expression du biomarqueur cible $B_0$.
-  * **Anti-angiogénique (Anti-VEGF) :** Inhibition de la néovascularisation tumorale réduisant la capacité de croissance asymptotique ($\lambda_1$).
-  * **Immunothérapie (Inhibiteur PD-1 / PD-L1) :** Activation des lymphocytes T cytotoxiques effecteurs $E(t)$ selon le score PD-L1 / TMB, capables d'éliminer les sous-clones résistants.
-* **Imagerie Vectorielle Anatomique (SVG/CSS) :** Localisation dynamique de la tumeur primaire sur la silhouette anatomique, épaisseur visuelle de la barrière stromale, spicules d'invasion EMT et apparition des foyers métastatiques secondaires.
+Plutôt que d'appliquer une structure générique uniforme à de multiples localisations tumorales, l'architecture de **Numpap** adopte une démarche incrémentale rigoureuse :
 
-### 2. Essai Clinique Virtuel (VPop) & Découverte de Biomarqueurs par Machine Learning
-* **Génération de Cohortes Virtuelles ($N = 100$ à $400$ patients) :** Échantillonnage Monte-Carlo sous contraintes physiologiques intégrant la variabilité inter-individuelle PK ($k_{10}, V_c$), tumorale ($\lambda_0, W_0$), microenvironnementale ($\eta_{\text{stroma}}$) et clonale ($x_{R,0}$).
-* **Solveur RK4 Vectorisé & Stratification RECIST 1.1 :** Intégration simultanée de l'ensemble de la cohorte et classification clinique automatique en **CR** (*Réponse Complète*), **PR** (*Réponse Partielle*), **SD** (*Maladie Stable*) et **PD** (*Progression*), avec calcul du taux de réponse objective (**ORR**).
-* **Pipeline Machine Learning (`scikit-learn`) :** Entraînement d'un classifieur **Random Forest** avec validation croisée stratifiée (*Stratified K-Fold*), génération de la **courbe ROC-AUC** et extraction de l'**importance relative des biomarqueurs prédictifs** (*Feature Importance*).
-* **Export de Données :** Téléchargement direct de la cohorte simulée au format `.CSV` pour des analyses biostatistiques complémentaires sous R ou Python.
+1. **Modèle de référence unique et documenté :** Calibration et vérification sur un couple pathologie-molécule bien caractérisé — l'**adénocarcinome pulmonaire non à petites cellules (CBNPC / NSCLC) présentant une mutation activatrice d'*EGFR* ($\text{Ex19del}$ ou $\text{L858R}$)** traité par **Osimertinib** (inhibiteur de tyrosine kinase de 3e génération) et son métabolite actif **AZ5104**.
+2. **Harmonisation stricte entre simulation individuelle ($N = 1$) et cohorte virtuelle (VPop) :** Les simulations d'un patient unique et d'une population virtuelle exécutent exactement le même système d'équations différentielles ordinaires (EDO) et les mêmes hypothèses biophysiques.
+3. **Dissociation entre biomarqueurs mécanistes exploratoires et classifications cliniques :** Les variables internes du modèle (masses viables/apoptotiques, fractions clonales, ratios immunitaires) sont strictement séparées des référentiels cliniques (stadification anatomique TNM/AJCC et évaluation radiologique multi-lésionnelle RECIST 1.1).
 
 ---
 
-## 🧮 Formulation Mathématique (Système à 8 EDO)
+## 2. Architecture Mathématique et Mécanistique (`EGFRNSCLCQSPEngine`)
 
-Le moteur couvre la pharmacocinétique bi-compartimentale ($C_c, C_p$), la croissance tumorale de Simeoni scindée en populations sensible ($x_S$) et résistante ($x_R$), les compartiments de transit apoptotique ($x_2, x_3, x_4$) et la réponse immunitaire cytotoxique ($E$) :
+### 2.1 Pharmacocinétique Bicompartimentale, Métabolite Actif et Bilans de Masse
 
-$$\begin{aligned} \frac{dC_c}{dt} &= -(k_{10} + k_{12}) C_c + k_{21} C_p + \frac{R_{\text{inf}}}{V_c}, \qquad \frac{dC_p}{dt} = k_{12} C_c - k_{21} C_p \\ \frac{dx_S}{dt} &= \frac{\lambda_0 x_S}{\left[1 + \left(\frac{\lambda_0}{\lambda_{1,\text{eff}}} W\right)^\psi\right]^{1/\psi}} - k_{2,S} C_c x_S - k_{\text{imm}} E x_S - \mu(C_c) x_S \\ \frac{dx_R}{dt} &= \frac{0.88\,\lambda_0 x_R}{\left[1 + \left(\frac{\lambda_0}{\lambda_{1,\text{eff}}} W\right)^\psi\right]^{1/\psi}} - k_{2,R} C_c x_R - k_{\text{imm}} E x_R + \mu(C_c) x_S \\ \frac{dx_2}{dt} &= \text{Kill}_{\text{total}} - k_1 x_2, \qquad \frac{dx_3}{dt} = k_1 (x_2 - x_3), \qquad \frac{dx_4}{dt} = k_1 (x_3 - x_4) \\ \frac{dE}{dt} &= \alpha_{\text{ICI}} \cdot \text{ICI} \cdot \left(\frac{\text{TMB}}{0.8 + \text{TMB}}\right)(1 + 1.5 x_2) - \delta_E (E - E_0) \end{aligned}$$
+La pharmacocinétique de la molécule mère (Osimertinib) est décrite par un modèle bicompartimental physiologique ($V_1, V_2, CL, Q$) couplé à un compartiment de distribution et d'élimination pour son métabolite actif N-déméthylé **AZ5104** ($V_{\text{met}}, CL_{\text{met}}$) avec prise en compte du rapport stoechiométrique des masses molaires ($\text{MW}_{\text{met}} / \text{MW}_{\text{parent}}$) :
 
-où la puissance thérapeutique effective intègre la barrière stromale et la saturation du biomarqueur cible $B_0$ :
-$$k_{2,S} = k_{2,\text{base}} \cdot \eta_{\text{stroma}} \cdot \left(\frac{2 B_0}{0.5 + B_0}\right), \qquad W(t) = x_S + x_R + x_2 + x_3 + x_4$$
+$$
+\begin{aligned}
+\frac{dC_1}{dt} &= -\frac{CL + Q}{V_1} C_1 + \frac{Q}{V_1} C_2 + \frac{R_{\text{in}}(t)}{V_1} \\
+\frac{dC_2}{dt} &= \frac{Q}{V_2} (C_1 - C_2) \\
+\frac{dC_{\text{met}}}{dt} &= \frac{1}{V_{\text{met}}} \left( f_m \cdot CL \cdot C_1 \cdot \frac{\text{MW}_{\text{met}}}{\text{MW}_{\text{parent}}} - CL_{\text{met}} \cdot C_{\text{met}} \right)
+\end{aligned}
+$$
+
+* **Discontinuités exactes des bolus :** Les administrations intraveineuses ou per os instantanées sont traitées par découpage exact des intervalles d'intégration aux instants $t_i$ des doses, avec mise à jour de la condition initiale $C_1(t_i^+) = C_1(t_i^-) + \text{Dose}_i / V_1$.
+* **Conservation des flux PK :** Le moteur intègre simultanément l'élimination parentale non métabolisée $(1 - f_m) CL \cdot C_1$, la fraction biotransformée $f_m CL \cdot C_1$ et l'élimination du métabolite $CL_{\text{met}} C_{\text{met}}$, garantissant des résidus de bilan de masse inférieurs à $10^{-8}\ \text{mg}$.
+
+### 2.2 Cascade d'Exposition : Totale, Libre Plasmatique et Libre Intratumorale
+
+Conformément à l'hypothèse du médicament libre (*Free Drug Hypothesis*), seule la fraction non liée aux protéines plasmatiques ($f_u$) traverse les barrières biologiques et interagit avec le domaine kinase d'*EGFR*. Le modèle distingue trois niveaux d'exposition :
+
+1. **Concentration plasmatique totale :** $C_1$ et $C_{\text{met}}$ exprimées en $\text{mg/L}$.
+2. **Concentration plasmatique libre effective ($\mu\text{M}$) :**
+   $$C_{u,\text{plasma,eff}}(t) = \frac{f_{u,\text{parent}} \cdot C_1(t) \cdot 1000}{\text{MW}_{\text{parent}}} + \rho_{\text{met}} \cdot \frac{f_{u,\text{met}} \cdot C_{\text{met}}(t) \cdot 1000}{\text{MW}_{\text{met}}}$$
+   où $\rho_{\text{met}}$ représente la puissance relative libre du métabolite AZ5104 par rapport à la molécule mère.
+3. **Concentration libre intratumorale ($C_{u,\text{tumor}}$ en $\mu\text{M}$) :** Modulée par le coefficient de partition libre $K_{p,uu}$, la barrière stromale desmoplastique ($b_{\text{stroma}}$) et l'index de perfusion vasculaire fonctionnelle $V_{\text{vasc}}(t)$ :
+   $$C_{u,\text{tumor}}(t) = C_{u,\text{plasma,eff}}(t) \cdot K_{p,uu,\text{base}} \cdot (1 - b_{\text{stroma}}) \cdot \text{clip}\!\left(\frac{V_{\text{vasc}}(t)}{0.35 + V_{\text{vasc}}(t)},\ 0.15,\ 1.15\right)$$
+
+### 2.3 Dynamique Tumorale à 3 États ($x_S \leftrightarrow x_P \to x_R$) et Séparation Viable / Apoptotique
+
+Pour dépasser la limite d'une simple transition binaire sensible-résistant, la masse tumorale viable ($W_{\text{viable}}$) est structurée en trois sous-populations phénotypiques et génétiques, complétées par une cascade de trois compartiments de transit apoptotique ($W_{\text{apop}} = x_{A1} + x_{A2} + x_{A3}$) :
+
+* **$x_S(t)$ — Cellules sensibles (*EGFR* $\text{Ex19del}/\text{L858R}$) :** Prolifèrent au taux $\lambda_0$ et subissent une lyse saturable de Hill pilotée par $C_{u,\text{tumor}}$ et la sensibilité de la cible $B_0$ ($EC_{50,u,\text{eff}} = EC_{50,u} / B_0$).
+* **$x_P(t)$ — Cellules persistantes tolérantes (*Drug-Tolerant Persisters*, DTP) :** Population à cycle lent induite de manière épigénétique sous pression thérapeutique ($k_{SP} \cdot \text{Hill}(C_{u,\text{tumor}})$) et capable de **réversion** vers l'état sensible ($k_{PS} \cdot (1 - \text{Hill}(C_{u,\text{tumor}}))$) lors du *washout* pharmacologique.
+* **$x_R(t)$ — Clone génétiquement résistant (ex. mutation secondaire *EGFR* $\text{C797S}$, amplification *MET*) :** Émerge de manière irréversible à partir de $x_S$ ($\mu_{SR}$) et, à un taux accru, à partir du réservoir persistant $x_P$ ($\mu_{PR}$).
+
+$$
+\begin{aligned}
+\frac{dx_S}{dt} &= g_S - k_{\text{kill},S} x_S - k_{\text{imm},S} x_S - \Phi_{S \to P} + \Phi_{P \to S} - \Phi_{S \to R} \\
+\frac{dx_P}{dt} &= g_P - k_{\text{kill},P} x_P - k_{\text{imm},P} x_P + \Phi_{S \to P} - \Phi_{P \to S} - \Phi_{P \to R} \\
+\frac{dx_R}{dt} &= g_R - k_{\text{kill},R} x_R - k_{\text{imm},R} x_R + \Phi_{S \to R} + \Phi_{P \to R} \\
+\frac{dx_{A1}}{dt} &= \text{Kill}_{\text{total}} - k_1 x_{A1}, \qquad \frac{dx_{A2}}{dt} = k_1(x_{A1} - x_{A2}), \qquad \frac{dx_{A3}}{dt} = k_1(x_{A2} - x_{A3})
+\end{aligned}
+$$
+
+La masse tumorale totale suivie en imagerie vaut $W_{\text{total}}(t) = W_{\text{viable}}(t) + W_{\text{apop}}(t)$, tandis que seule la fraction viable $W_{\text{viable}}(t) = x_S(t) + x_P(t) + x_R(t)$ contribue à la prolifération et à la sécrétion de facteurs angiogéniques.
+
+### 2.4 Microenvironnement Tumoral (TME) et Mécanismes d'Association
+
+Chaque classe thérapeutique agit sur son compartiment physiologique propre :
+
+* **Compartiment vasculaire ($V_{\text{vasc}}$) et Anti-VEGF :** La masse viable stimule l'angiogenèse via la sécrétion de VEGF ($k_{\text{angio}}$), modulant la capacité de charge tumorale effective $K_{\text{cap}}(V_{\text{vasc}})$ ainsi que la délivrance intratumorale $K_{p,uu,\text{eff}}$. Le traitement anti-VEGF inhibe ce signal angiogénique.
+* **Immunité anti-tumorale ($\text{CD8}^+$) vs Immunosuppression ($\text{T}_{\text{reg}}$ / TAM-M2) :**
+  * L'hypoxie induite par une faible vascularisation favorise le recrutement de cellules immunosuppressives $I_{\text{sup}}$ ($\text{T}_{\text{reg}}$ et macrophages associés aux tumeurs M2), qui freinent l'activité cytolytique et l'expansion lymphocytaire via le facteur $(1 + 1.5 I_{\text{sup}})^{-1}$.
+  * Les inhibiteurs de points de contrôle immunitaire (anti-PD-1 / anti-PD-L1) lèvent l'épuisement des lymphocytes effecteurs $T_{\text{CD8}}$ proportionnellement au score $\text{TMB}/\text{PD-L1}$ et à la libération d'antigènes tumoraux issue de la clairance apoptotique ($k_1 x_{A3}$). Lorsque l'immunothérapie est désactivée ($\text{anti-PD-1} = 0$), l'effet imputable à l'ICI est strictement nul.
 
 ---
 
-## 📊 Catalogue des 11 Pathologies Tumorales Intégrées (GLOBOCAN 2024)
+## 3. Dissociation des Indicateurs Exploratoires et des Référentiels Cliniques
 
-| Rang | Localisation | Sous-types Modélisés | Altérations Moléculaires Clés | Spécificité Microenvironnementale |
-| :---: | :--- | :--- | :--- | :--- |
-| **1** | **Poumon** | Adénocarcinome (NSCLC) & Petites Cellules (SCLC) | `EGFR`, `ALK`, `KRAS`, `TP53`, `RB1` | Dissémination précoce (SCLC) |
-| **2** | **Sein** | Sous-type `HER2+` & Triple Négatif (`TNBC`) | `ERBB2`, `BRCA1/2`, `PIK3CA`, `PTEN` | Forte transition EMT & MMP (TNBC) |
-| **3** | **Côlon-Rectum** | Adénocarcinome colique | `APC`, `KRAS`, `TP53`, `dMMR/MSI` | Séquence adénome $\rightarrow$ carcinome |
-| **4** | **Prostate** | Adénocarcinome acinaire | Signalisation `AR`, `TMPRSS2-ERG`, `PTEN` | Progression lente, tropisme osseux |
-| **5** | **Estomac** | Adénocarcinome intestinal / diffus | `CDH1` (E-cadhérine), `TP53`, `HER2` | Perte d'adhérence épithéliale |
-| **6** | **Thyroïde** | Carcinome papillaire | `BRAF V600E`, `RAS`, `RET/PTC` | Forte perméabilité, diffusion lymphatique |
-| **7** | **Foie** | Carcinome hépatocellulaire (CHC) | `TERT`, `TP53`, `CTNNB1`, `VEGF` | Stroma fibrotique / cirrhotique |
-| **8** | **Vessie** | Carcinome urothélial (TVIM) | `FGFR3`, `TP53`, `RB1`, `ERBB2` | Infiltration du muscle détrusor |
-| **9** | **Col de l'utérus** | Carcinome épidermoïde `HPV+` | Oncoprotéines virales `E6/E7` (`p53`/`pRb`) | Oncogenèse virale HPV 16/18 |
-| **10** | **Lymphome (LNH)** | Lymphome diffus à grandes cellules B (DLBCL) | `MYC`, `BCL2`, `BCL6` | Lignée mobile (perméabilité 95 %) |
-| **11** | **Pancréas** | Adénocarcinome canalaire (PDAC) | `KRAS`, `TP53`, `CDKN2A`, `SMAD4` | Stroma desmoplastique dense ($\eta = 0.28$) |
+Afin d'éviter toute sur-interprétation clinique des sorties simulées :
+
+* **Indicateurs exploratoires produits par le moteur :** Masse viable $W_{\text{viable}}$ ($\text{g}$), masse apoptotique $W_{\text{apop}}$ ($\text{g}$), fraction clonale résistante $f_R = x_R / W_{\text{viable}}$, fraction persistante $f_P = x_P / W_{\text{viable}}$, index vasculaire $V_{\text{vasc}}$, ratio immunitaire $T_{\text{CD8}} / I_{\text{sup}}$, et diamètre sphérique équivalent unidimensionnel $d_{\text{eq}} = 20 \left(\frac{3 W_{\text{total}}}{4\pi}\right)^{1/3}$ ($\text{mm}$).
+* **Limites cliniques explicites :**
+  * Le modèle **ne calcule pas** de stadification clinique TNM/AJCC (qui requiert une évaluation anatomique de l'extension locale, ganglionnaire et métastatique à distance).
+  * La variation relative du diamètre équivalent ($\Delta d_{\text{eq}} \le -30\%$) est utilisée uniquement comme critère unidimensionnel exploratoire *in silico* et **ne remplace pas** une évaluation RECIST 1.1 radiologique sur lésions cibles et non-cibles.
 
 ---
 
-## 🏗️ Architecture Modulaire du Projet
+## 4. Vérification Numérique, Analyse de Sensibilité et Machine Learning
+
+### 4.1 Suite Automatisée de Vérification Formelle (`pytest`)
+
+Avant toute confrontation à des données expérimentales, le moteur est soumis à une batterie de **12 tests de vérification** (conformes aux bonnes pratiques ASME V&V 40) couvrant :
+
+1. **Sans médicament :** Conformité exacte de $W_{\text{viable}}(t)$ au modèle de croissance non traité de référence ($W_{\text{apop}} = 0$).
+2. **Dose nulle ($D = 0, R_{\text{in}} = 0$) :** Absence totale d'effet pharmacologique attribuable au médicament.
+3. **Bolus isolé :** Vérification de la trajectoire PK face à la solution analytique bi-exponentielle exacte ($A e^{-\alpha t} + B e^{-\beta t}$).
+4. **Clairance augmentée ($CL \uparrow$) :** Diminution stricte de l'exposition ($\text{AUC}$) et de l'efficacité antitumorale, toutes choses égales par ailleurs.
+5. **Résistance initiale nulle ($x_R(0) = 0, \mu = 0$) :** Absence de création artificielle de cellules résistantes.
+6. **Clone résistant sans avantage sélectif :** Conservation exacte du ratio clonal en l'absence de pression de sélection.
+7. **Immunothérapie désactivée ($\text{anti-PD-1} = 0$) :** Activation lymphocytaire $T_{\text{CD8}}(t) = 0$ sur toute la simulation.
+8. **Anti-VEGF désactivé ($\text{anti-VEGF} = 0$) :** Retour exact à la dynamique vasculaire basale.
+9. **Tous traitements désactivés :** Identité stricte avec la trajectoire tumorale non traitée.
+10. **Absence de cellules viables initiales ($W_{\text{viable}}(0) = 0$) :** Absence de génération spontanée de masse tumorale.
+11. **Conservation des bilans de masse PK :** Vérification des résidus parentaux et métaboliques ($< 10^{-8}\ \text{mg}$).
+12. **Convergence numérique multi-solveurs :** Accord entre l'intégrateur explicite `RK45` et le solveur implicite pour systèmes raides `Radau` ($\text{rtol} = 10^{-9}, \text{atol} = 10^{-12}$).
+
+### 4.2 Cohorte Virtuelle (VPop), Analyse de Sensibilité PRCC et ML
+
+* **Analyse de sensibilité globale (PRCC) :** Le module calcule les **coefficients de corrélation partielle sur les rangs (PRCC)** entre les paramètres échantillonnés ($CL, f_u, b_{\text{stroma}}, B_0, \text{TMB}/\text{PD-L1}, \lambda_0, x_{R0}$) et la masse tumorale viable finale afin de quantifier le poids mécanique de chaque source d'incertitude.
+* **Pipeline Machine Learning sans fuite de données :** La prédiction de la réponse unidimensionnelle utilise un `Pipeline(StandardScaler(), RandomForestClassifier())` ajusté **strictement à l'intérieur de chaque pli** de validation croisée stratifiée (`StratifiedKFold`). L'importance des variables (indice de Gini) est présentée comme une mesure d'association prédictive au sein du modèle et **non comme une preuve de causalité biologique**.
+
+---
+
+## 5. Structure du Dépôt et Installation
 
 ```text
 Numpap/
+├── app.py                                 # Interface interactive Dash (Patient N=1 & Cohorte VPop)
 ├── core/
-│   ├── __init__.py
-│   ├── cancer_catalog.py        # Base de connaissances des 11 cancers GLOBOCAN 2024 & paramètres QSP
-│   └── patient_pkpd_engine.py   # Solveur EDO individuel (8 compartiments) + Cohorte RK4 & Pipeline ML
+│   ├── egfr_nsclc_qsp_engine.py           # Moteur QSP/PK-PD de référence (CBNPC EGFR / Osimertinib)
+│   ├── patient_pkpd_engine.py             # Moteur PK/PD généraliste & simulateur de cohorte
+│   ├── drug_catalog.py                    # Fiches d'identité PK/PD et seuils libres (EC50,u / Ctox,u)
+│   └── cancer_catalog.py                  # Paramètres biologiques des profils tumoraux
 ├── services/
-│   ├── __init__.py
-│   └── patient_logger.py        # Journalisation des séries temporelles PK/PD, clonales et immunitaires
+│   └── patient_logger.py                  # Journalisation des trajectoires temporelles
 ├── ui/
-│   ├── __init__.py
-│   └── svg_patient_tumor.py     # Rendu anatomique multi-organes & microenvironnement stromal (SVG/CSS)
-├── app.py                       # Interface web interactive Dash (Mode Individuel & Essai Clinique Virtuel)
-├── requirements.txt             # Dépendances Python
-├── Dockerfile                   # Image Docker légère (python:3.11-slim)
-├── docker-compose.yml           # Orchestration du service web
+│   └── svg_patient_tumor.py               # Visualisation anatomique SVG du microenvironnement
+├── tests/
+│   └── test_consortium_verification.py    # Suite pytest des 12 tests de vérification formelle
 └── README.md
+```
+
+### Prérequis et Exécution (Windows PowerShell)
+
+```powershell
+# 1. Créer et activer l'environnement virtuel
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+
+# 2. Installer les dépendances scientifiques et d'interface
+pip install numpy scipy pandas scikit-learn dash plotly pytest
+
+# 3. Exécuter la suite complète de vérification numérique et biologique
+python -m pytest -v
+
+# 4. Lancer l'interface interactive locale
+python app.py
+```
+
+---
+
+## 6. Feuille de Route Scientifique
+
+* **Étape 1 (En cours) — Vérification formelle et mécanique :** Validation des bilans de masse parent/métabolite, des conditions limites et de la sensibilité PRCC sur le modèle de référence *EGFR*-NSCLC.
+* **Étape 2 — Calibration sur données publiées :** Estimation des paramètres ($\lambda_0, E_{\max}, EC_{50,u}, k_{SP}, \mu_{PR}$) à partir de courbes de croissance de xénogreffes dérivées de patients (PDX *EGFR* $\text{Ex19del}/\text{L858R}$) et de profils PK/PD cliniques publiés pour l'Osimertinib (essais AURA / FLAURA).
+* **Étape 3 — Validation externe et quantification d'incertitude :** Confrontation des prédictions de survie sans progression simulée et d'émergence de résistance à une cohorte clinique indépendante non utilisée lors de la calibration.
+* **Étape 4 — Extension modulaire multi-pathologies :** Déploiement progressif de modules spécifiques aux histologies complexes (ex. barrière desmoplastique dense pour l'adénocarcinome canalaire pancréatique PDAC, hématopoïèse pour les hémopathies malignes).
