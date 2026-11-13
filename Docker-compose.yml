@@ -1,0 +1,9 @@
+version: '3.8'
+
+services:
+  patient_digital_twin:
+    build: .
+    container_name: patient_twin_oncology
+    ports:
+      - "8051:8051"
+    restart: always
